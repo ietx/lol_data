@@ -1,4 +1,4 @@
-import urllib.request
+import urllib.request, json
 
 header = 'https://br1.api.riotgames.com/lol/'
 
@@ -10,6 +10,15 @@ summoner_name = 'ietx'
 
 url = header + query_type + summoner_name + '?api_key=' + api_key
 
-data = urllib.request.urlopen(url)
+response = urllib.request.urlopen(url)
 
-print (data['id'])
+data = json.loads(response.read())
+
+player_id = data['id']
+
+print(player_id)
+
+
+response = urllib.request.urlopen('http://ddragon.leagueoflegends.com/cdn/10.16.1/data/en_US/champion.json')
+data = json.loads(response.read())
+data['data']['Neeko']
