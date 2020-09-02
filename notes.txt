@@ -1,1 +1,0 @@
-get champion icon, item icon e summonet icon if summoner class
