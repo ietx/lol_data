@@ -7,8 +7,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from io import BytesIO
 
-api_key = 'RGAPI-4bae7798-aec1-482b-8511-1f10448d5fe3'
-summoner_name = 'ietx'
+api_key = 'RGAPI-ede7a593-15a0-41f6-a59d-44cc2c7f7fa9'
 region = 'BR'
 
 data_dragon = {
@@ -76,290 +75,492 @@ def print_img(image):
     plt.axis('off')
     plt.show()
 
-def get_icon(type, info):
-    if type == 'champion_icon':
-        return get_image(make_url(data_dragon[type], info, '.png'))
-    elif type == 'item_icon':
-        return get_image(make_url(data_dragon[type], info, '.png'))
-    elif type == 'summoner_icon':
-        return get_image(make_url(data_dragon[type], info, '.png'))
-    elif type == 'profile_icon':
-        return get_image(make_url(data_dragon[type], info, '.png'))
-
-champions_data = extract_json(data_dragon['champions_json'])
-def champion_id_name(champions_data):
-    champion_names = list(champions_data['data'].keys())
-    champion_name_to_id = {}
-    for name in champion_names:
-        champion_name_to_id[name] = int(champions_data['data'][name]['key'])
-    champion_id_to_name = {v: k for (k, v) in champion_name_to_id.items()}
-    return champion_name_to_id, champion_id_to_name
-champion_name_to_id, champion_id_to_name = champion_id_name(champions_data)
-
-items_data = extract_json(data_dragon['items_json'])
-def item_id_name(champions_data):
-    item_ids = list(champions_data['data'].keys())
-    items_id_to_name = {}
-    for item in item_ids:
-        items_id_to_name[item] = items_data['data'][item]['name']
-    items_name_to_id = {v: k for (k, v) in items_id_to_name.items()}
-    return items_id_to_name, items_name_to_id
-items_id_to_name, items_name_to_id = item_id_name(items_data)
-
-summoner_spell_data = extract_json(data_dragon['summoner_spell_json'])
-def summoner_spell_id_name(champions_data):
-    summoner_spell_ids = list(summoner_spell_data['data'].keys())
-    summoner_spell_id_to_name = {}
-    for summoner_spell in summoner_spell_ids:
-        summoner_spell_id_to_name[summoner_spell] = summoner_spell_data['data'][summoner_spell]['name']
-    summoner_spell_name_to_id = {v: k for (k, v) in summoner_spell_id_to_name.items()}
-    return summoner_spell_id_to_name, summoner_spell_name_to_id
-summoner_spell_id_to_name, summoner_spell_name_to_id = summoner_spell_id_name(items_data)
-
 class Summoner():
     def __init__(self, summoner_name):
         url = make_url(head(regions[region]), query_type['summoner_info'], summoner_name, tail(api_key))
         self.summoner_data = extract_json(url)
-        self.summoner_id = self.summoner_data['id']
-        self.account_id = self.summoner_data['accountId']
-        self.puu_id = self.summoner_data['puuid']
-        self.name = self.summoner_data['name']
-        self.profile_icon_id = self.summoner_data['profileIconId']
-        self.summoner_level = self.summoner_data['summonerLevel']
-
-    def get_mastery(self):
-        url = make_url(head(regions[region]), query_type['mastery'], self.summoner_id, tail(api_key))
+        url = make_url(head(regions[region]), query_type['mastery'], self.summoner_data['id'], tail(api_key))
         self.mastery_data = extract_json(url)
-
-    def champion_mastery(self, position):
-        self.get_mastery()
-        self.champion_id = self.mastery_data[position]['championId']
-        self.champion_level = self.mastery_data[position]['championLevel']
-        self.champion_points = self.mastery_data[position]['championPoints']
-        self.champion_next_level_points = self.mastery_data[position]['championPointsUntilNextLevel']
-        self.champion_last_play = self.mastery_data[position]['lastPlayTime']
-
-    def get_match_history(self):
-        url = make_url(head(regions[region]), query_type['match_history'], self.account_id, tail(api_key))
+        url = make_url(head(regions[region]), query_type['match_history'], self.summoner_data['accountId'], tail(api_key))
         self.match_history_data = extract_json(url)['matches']
 
-    def get_match(self, position):
-        self.get_match_history()
-        self.match_id = self.match_history_data[position]['gameId']
-        self.match_timestamp = self.match_history_data[position]['timestamp']
-        self.match_champion_id = self.match_history_data[position]['champion']
+    def get_summoner_id(self):
+        return self.summoner_data['id']
+
+    def get_account_id(self):
+        return self.summoner_data['accountId']
+
+    def get_puu_id(self):
+        return self.summoner_data['puuid']
+
+    def get_profile_icon_id(self):
+        return self.summoner_data['profileIconId']
+
+    def get_summoner_level(self):
+        return self.summoner_data['summonerLevel']
+
+    def get_mastery_data(self, parameter):
+        return self.mastery_data[int(parameter)]
+
+    def get_match_data(self, parameter):
+        return self.match_history_data[int(parameter)]
+
+    def get_mastery_champion_id(self, parameter):
+        return str(self.get_mastery_data(parameter)['championId'])
+
+    def get_match_id(self, parameter):
+        return str(self.get_match_history_data(parameter)['gameId'])
 
 class Game():
     def __init__(self, match_id):
-        url = make_url(head(regions[region]), query_type['match_info'], match_id, tail(api_key))
+        url = make_url(head(regions[region]), query_type['match_info'], str(match_id), tail(api_key))
         self.game_data = extract_json(url)
-        self.game_id = self.game_data['gameId']
-        self.creation = self.game_data['gameCreation']
-        self.duration = self.game_data['gameDuration']
-        self.season = self.game_data['seasonId']
-        self.version = self.game_data['gameVersion']
-        self.mode = self.game_data['gameMode']
-        self.type = self.game_data['gameType']
 
-class gameSummoner(Game):
-    def __init__(self, match_id):
-        super(gameSummoner, self).__init__(match_id)
+        for participants in self.game_data['participants']:
+            for participant_ids in self.game_data['participantIdentities']:
+                if participants['participantId'] == participant_ids['participantId']:
+                    participants.update(participant_ids)
 
-    def get_player_info(self, player):
-        player_dict = {}
-        player_dict['participant_id'] = player['participantId']
-        player_dict['account_id'] = player['player']['accountId']
-        player_dict['summoner_name'] = player['player']['summonerName']
-        player_dict['summoner_id'] = player['player']['summonerId']
-        player_dict['profile_icon'] = player['player']['profileIcon']
-        for participant in self.game_data['participants']:
-            if participant['participantId'] == player_dict['participant_id']:
-                player_dict['team_id'] = participant['teamId']
-                player_dict['champion_id'] = participant['championId']
-                player_dict['summoner_spell_1_id'] = participant['spell1Id']
-                player_dict['summoner_spell_2_id'] = participant['spell2Id']
-                player_dict['result'] = participant['stats']['win']
-                player_dict['item_0_id'] = participant['stats']['item0']
-                player_dict['item_1_id'] = participant['stats']['item1']
-                player_dict['item_2_id'] = participant['stats']['item2']
-                player_dict['item_3_id'] = participant['stats']['item3']
-                player_dict['item_4_id'] = participant['stats']['item4']
-                player_dict['item_5_id'] = participant['stats']['item5']
-                player_dict['item_6_id'] = participant['stats']['item6']
-                player_dict['level'] = participant['stats']['champLevel']
-                player_dict['kills'] = participant['stats']['kills']
-                player_dict['deaths'] = participant['stats']['deaths']
-                player_dict['assists'] = participant['stats']['assists']
-                player_dict['largest_killing_spree'] = participant['stats']['largestKillingSpree']
-                player_dict['largest_multi_kill'] = participant['stats']['largestMultiKill']
-                player_dict['longest_time_living'] = participant['stats']['longestTimeSpentLiving']
-                player_dict['total_damage_dealt'] = participant['stats']['totalDamageDealt']
-                player_dict['magic_damage_dealt'] = participant['stats']['magicDamageDealt']
-                player_dict['physical_damage_dealt'] = participant['stats']['physicalDamageDealt']
-                player_dict['true_damage_dealt'] = participant['stats']['trueDamageDealt']
-                player_dict['total_damage_dealt_to_champions'] = participant['stats']['totalDamageDealtToChampions']
-                player_dict['magic_damage_dealt_to_champions'] = participant['stats']['magicDamageDealtToChampions']
-                player_dict['physical_damage_dealt_to_champions'] = participant['stats']['physicalDamageDealtToChampions']
-                player_dict['true_damage_dealt_to_champions'] = participant['stats']['trueDamageDealtToChampions']
-                player_dict['total_damage_dealt_to_objectives'] = participant['stats']['damageDealtToObjectives']
-                player_dict['total_damage_dealt_to_turrets'] = participant['stats']['damageDealtToTurrets']
-                player_dict['total_damage_self_mitigated'] = participant['stats']['damageSelfMitigated']
-                player_dict['total_heal'] = participant['stats']['totalHeal']
-                player_dict['vision_score'] = participant['stats']['visionScore']
-                player_dict['time_ccing_others'] = participant['stats']['timeCCingOthers']
-                player_dict['total_damage_taken'] = participant['stats']['totalDamageTaken']
-                player_dict['magical_damage_taken'] = participant['stats']['magicalDamageTaken']
-                player_dict['physical_damage_taken'] = participant['stats']['physicalDamageTaken']
-                player_dict['true_damage_taken'] = participant['stats']['trueDamageTaken']
-                player_dict['gold_earned'] = participant['stats']['goldEarned']
-                player_dict['gold_spent'] = participant['stats']['goldSpent']
-                player_dict['turret_kills'] = participant['stats']['turretKills']
-                player_dict['inhibitor_kills'] = participant['stats']['inhibitorKills']
-                player_dict['cs_score'] = participant['stats']['totalMinionsKilled'] + participant['stats']['neutralMinionsKilled']
-                player_dict['minions_killed_team_jungle'] = participant['stats']['neutralMinionsKilledTeamJungle']
-                player_dict['minions_killed_enemy_jungle'] = participant['stats']['neutralMinionsKilledEnemyJungle']
-                player_dict['total_time_ccing_dealt'] = participant['stats']['totalTimeCrowdControlDealt']
-                player_dict['wards_placed'] = participant['stats']['wardsPlaced']
-                player_dict['wards_killed'] = participant['stats']['wardsKilled']
-                try:
-                    player_dict['first_blood_kill'] = participant['stats']['firstBloodKill']
-                    player_dict['first_blood_assist'] = participant['stats']['firstBloodAssist']
-                    player_dict['first_tower_kill'] = participant['stats']['firstTowerKill']
-                    player_dict['first_tower_assist'] = participant['stats']['firstTowerAssist']
-                except:
-                    pass
-                player_dict['primary_rune'] = participant['stats']['perkPrimaryStyle']
-                player_dict['secondary_rune'] = participant['stats']['perkSubStyle']
-                player_dict['primary_rune_1'] = participant['stats']['perk0']
-                player_dict['primary_rune_2'] = participant['stats']['perk1']
-                player_dict['primary_rune_3'] = participant['stats']['perk2']
-                player_dict['primary_rune_4'] = participant['stats']['perk3']
-                player_dict['secondary_rune_1'] = participant['stats']['perk4']
-                player_dict['secondary_rune_2'] = participant['stats']['perk5']
-                try:
-                    player_dict['creeps_per_min_deltas'] = participant['timeline']['creepsPerMinDeltas']
-                    player_dict['xp_per_min_deltas'] = participant['timeline']['xpPerMinDeltas']
-                    player_dict['gold_per_min_deltas'] = participant['timeline']['goldPerMinDeltas']
-                except:
-                    pass
-                player_dict['role'] = participant['timeline']['role']
-                player_dict['lane'] = participant['timeline']['lane']
-        return player_dict
+        self.game_data.pop('participantIdentities')
 
-    def get_summoner_info(self, summoner_name):
-        for player in self.game_data['participantIdentities']:
-            if player['player']['summonerName'] == summoner_name:
-                self.summoner_info = self.get_player_info(player)
+    def get_game_id(self):
+        return self.game_data['gameId']
 
-class gameTeam(gameSummoner):
+    def get_game_creation(self):
+        return self.game_data['gameCreation']
 
-    def __init__(self, side, match_id):
-        super(gameTeam, self).__init__(match_id)
+    def get_game_duration(self):
+        return self.game_data['gameDuration']
 
+    def get_game_season(self):
+        return self.game_data['seasonId']
+
+    def get_game_version(self):
+        return self.game_data['gameVersion']
+
+    def get_game_mode(self):
+        return self.game_data['gameMode']
+
+    def get_game_type(self):
+        return self.game_data['gameType']
+
+    def get_team_id(self, side):
         if side == 'blue':
-            index = 0
+            team_id = 100
         elif side == 'red':
-            index = 1
+            team_id = 200
+        return team_id
 
-        self.team_id = self.game_data['teams'][index]['teamId']
-        self.first_blood = self.game_data['teams'][index]['firstBlood']
-        self.first_tower = self.game_data['teams'][index]['firstTower']
-        self.first_inhibitor = self.game_data['teams'][index]['firstInhibitor']
-        self.first_baron = self.game_data['teams'][index]['firstBaron']
-        self.first_dragon = self.game_data['teams'][index]['firstDragon']
-        self.first_rift_herald = self.game_data['teams'][index]['firstRiftHerald']
-        self.tower_kills = self.game_data['teams'][index]['towerKills']
-        self.inhibitor_kills = self.game_data['teams'][index]['inhibitorKills']
-        self.baron_bills = self.game_data['teams'][index]['baronKills']
-        self.dragon_kills = self.game_data['teams'][index]['dragonKills']
-        self.vilemaw_kills = self.game_data['teams'][index]['vilemawKills']
-        self.rift_herald_kills = self.game_data['teams'][index]['riftHeraldKills']
+    def get_team_info(self, side):
+        for team in my_game.game_data['teams']:
+            if team['teamId'] == self.get_team_id(side):
+                return team
 
-        self.bans = self.game_data['teams'][index]['bans']
-        try:
-            self.ban_ids = []
-            for ban in self.bans:
-                self.ban_ids.append(ban['championId'])
-        except:
-            pass
+    def get_team_players(self, side):
+        players = []
+        for participant in self.game_data['participants']:
+            if participant['teamId'] == self.get_team_id(side):
+                players.append(participant)
+        return players
 
-    def get_players_info(self):
-        self.players_list = []
-        for player in self.game_data['participantIdentities']:
-            for participant in self.game_data['participants']:
-                if participant['participantId'] == player['participantId']:
-                    if participant['teamId'] == self.team_id:
-                        self.players_list.append(self.get_player_info(player))
+    def get_player_info(self, summoner_name):
+        for participant in self.game_data['participants']:
+            if participant['player']['summonerName'] == str(summoner_name):
+                return participant
+                break
+
+    def get_player_spells(self, summoner_name):
+        for participant in self.game_data['participants']:
+            if participant['player']['summonerName'] == str(summoner_name):
+                return {
+                'spell_1': participant['spell1Id'],
+                'spell_2': participant['spell2Id']
+                }
+                break
+
+    def get_player_kda(self, summoner_name):
+        for participant in self.game_data['participants']['stats']:
+            if participant['player']['summonerName'] == str(summoner_name):
+                return {
+                'kills': participant['kills'],
+                'deaths': participant['deaths'],
+                'assists': participant['assists']
+                }
+                break
+
+    def get_player_items(self, summoner_name):
+        for participant in self.game_data['participants']['stats']:
+            if participant['player']['summonerName'] == str(summoner_name):
+                return {
+                'item_0': participant['item0'],
+                'item_1': participant['item1'],
+                'item_2': participant['item2'],
+                'item_3': participant['item3'],
+                'item_4': participant['item4'],
+                'item_5': participant['item5'],
+                'item_6': participant['item6']
+                }
+                break
+
+    def get_player_runes(self, summoner_name):
+        for participant in self.game_data['participants']['stats']:
+            if participant['player']['summonerName'] == str(summoner_name):
+                return {
+                'primary_rune': participant['perkPrimaryStyle'],
+                'secondary_rune': participant['perkSubStyle'],
+                'primary_1': participant['perk0'],
+                'primary_2': participant['perk1'],
+                'primary_3': participant['perk2'],
+                'primary_4': participant['perk3'],
+                'secondary_1': participant['perk4'],
+                'secondary_2': participant['perk5'],
+                'stat_1': participant['statPerk0'],
+                'stat_2': participant['statPerk1'],
+                'stat_3': participant['statPerk2']
+                }
+                break
+
+    def get_player_role_lane(self, summoner_name):
+        for participant in self.game_data['participants']:
+            if participant['player']['summonerName'] == str(summoner_name):
+                return {
+                'role': participant['timeline']['role'],
+                'lane': participant['timeline']['lane']
+                }
+                break
+
+    def get_player_cs(self, summoner_name):
+        for participant in self.game_data['participants']['stats']:
+            if participant['player']['summonerName'] == str(summoner_name):
+                return {
+                'total_cs': participant['totalMinionsKilled'] + participant['neutralMinionsKilled'],
+                'jungle_cs': participant['neutralMinionsKilled'],
+                'team_jungle_cs': participant['neutralMinionsKilledTeamJungle'],
+                'enemy_jungle_cs': participant['neutralMinionsKilledEnemyJungle']
+                }
+                break
+
+    def get_player_wards(self, summoner_name):
+        for participant in self.game_data['participants']['stats']:
+            if participant['player']['summonerName'] == str(summoner_name):
+                return {
+                'vision_score': participant['visionScore'],
+                'wards_placed': participant['wardsPlaced'],
+                'wards_killed': participant['wardsKilled']
+                }
+                break
+
+    def get_player_objectives(self, summoner_name):
+        for participant in self.game_data['participants']['stats']:
+            if participant['player']['summonerName'] == str(summoner_name):
+                return {
+                'turrets_killed': participant['turretKills'],
+                'inhibitors_killed': participant['inhibitorKills']
+                }
+                break
+
+    def get_player_kills(self, summoner_name):
+        for participant in self.game_data['participants']['stats']:
+            if participant['player']['summonerName'] == str(summoner_name):
+                return {
+                'largest_killing_spree': participant['largestKillingSpree'],
+                'largest_multi_kill': participant['largestMultiKill'],
+                'number_of_killing_sprees': participant['killingSprees']
+                }
+                break
+
+    def get_player_damage_dealt(self, summoner_name):
+        for participant in self.game_data['participants']['stats']:
+            if participant['player']['summonerName'] == str(summoner_name):
+                return {
+                'total': participant['totalDamageDealt'],
+                'total_magic': participant['magicDamageDealt'],
+                'total_physical': participant['physicalDamageDealt'],
+                'total_true': participant['trueDamageDealt'],
+                'total_to_champions': participant['totalDamageDealtToChampions'],
+                'total_magic_to_champions': participant['magicDamageDealtToChampions'],
+                'total_physical_to_champions': participant['physicalDamageDealtToChampions'],
+                'total_true_to_champions': participant['trueDamageDealtToChampions'],
+                'total_to_objectives': participant['damageDealtToObjectives'],
+                'total_to_turrets': participant['damageDealtToTurrets']
+                }
+                break
+
+    def get_player_damage_received(self, summoner_name):
+        for participant in self.game_data['participants']['stats']:
+            if participant['player']['summonerName'] == str(summoner_name):
+                return {
+                'total': participant['totalDamageTaken'],
+                'total_magic': participant['magicalDamageTaken'],
+                'total_physical': participant['physicalDamageTaken'],
+                'total_true': participant['trueDamageTaken']
+                }
+                break
+
+    def get_player_damage_received(self, summoner_name):
+        for participant in self.game_data['participants']['stats']:
+            if participant['player']['summonerName'] == str(summoner_name):
+                return {
+                'total': participant['totalDamageTaken'],
+                'total_magic': participant['magicalDamageTaken'],
+                'total_physical': participant['physicalDamageTaken'],
+                'total_true': participant['trueDamageTaken'],
+                'total_self_mitigated': participant['damageSelfMitigated'],
+                'total_heal': participant['totalHeal']
+                }
+                break
+
+    def get_player_cc(self, summoner_name):
+        for participant in self.game_data['participants']['stats']:
+            if participant['player']['summonerName'] == str(summoner_name):
+                return {
+                'cc_time_dealt': participant['timeCCingOthers'],
+                'cc_time_taken': participant['totalTimeCrowdControlDealt']
+                }
+                break
+
+    def get_player_gold(self, summoner_name):
+        for participant in self.game_data['participants']['stats']:
+            if participant['player']['summonerName'] == str(summoner_name):
+                return {
+                'gold_earned': participant['goldEarned'],
+                'gold_spent': participant['goldSpent']
+                }
+                break
 
 class Champion():
     def __init__(self, identifier):
+        url_1 = make_url(data_dragon['champions_json'])
+        self.all_champions_data = extract_json(url_1)['data']
+
         if isinstance(identifier, int):
             self.id = identifier
-            self.name = champion_id_to_name[identifier]
+            for champion_key in self.all_champions_data.keys():
+                if int(self.all_champions_data[champion_key]['key']) == identifier:
+                    self.name = self.all_champions_data[champion_key]['id']
+                    break
         else:
             self.name = identifier
-            self.id = champion_name_to_id[identifier]
+            for champion_key in self.all_champions_data.keys():
+                if self.all_champions_data[champion_key]['id'] == identifier:
+                    self.id = self.all_champions_data[champion_key]['key']
+                    break
 
-        url = make_url(data_dragon['unique_champion_json'], self.name, '.json')
-        self.champion_data = extract_json(url)
-        self.lore = self.champion_data['data'][self.name]['lore']
-        self.tags = self.champion_data['data'][self.name]['tags']
-        self.partype = self.champion_data['data'][self.name]['partype']
-        self.info = self.champion_data['data'][self.name]['info']
-        self.stats = self.champion_data['data'][self.name]['stats']
-        self.recommended = self.champion_data['data'][self.name]['recommended']
+        url_2 = make_url(data_dragon['unique_champion_json'], self.name, '.json')
+        self.champion_data = extract_json(url_2)['data'][self.name]
 
-        self.passive = self.champion_data['data'][self.name]['passive']
-        self.q = self.champion_data['data'][self.name]['spells'][0]
-        self.w = self.champion_data['data'][self.name]['spells'][1]
-        self.e = self.champion_data['data'][self.name]['spells'][2]
-        self.r = self.champion_data['data'][self.name]['spells'][3]
+    def get_name(self):
+        return self.name
 
-        self.skin_number = len(self.champion_data['data'][self.name]['skins'])
-        self.skins = {}
-        for skin in self.champion_data['data'][self.name]['skins']:
-            self.skins[skin['name']] = {'id': skin['id'], 'num': skin['num'], 'chromas': skin['chromas']}
-        self.skin_names = list(self.skins.keys())
+    def get_id(self):
+        return self.id
 
-        self.icon = get_image(make_url(data_dragon['champion_icon'], self.name, '.png'))
+    def get_passive(self):
+        return {
+        'name': self.champion_data['passive']['name'],
+        'description': self.champion_data['passive']['description'],
+        'image_id': self.champion_data['passive']['image']['full']
+        }
+        self.champion_data['passive']
 
-    def get_ability_icons(self):
-        self.passive_icon = get_image(make_url(data_dragon['champion_passive_icon'], self.passive['image']['full']))
-        self.q_icon = get_image(make_url(data_dragon['champion_spell_icon'], self.q['image']['full']))
-        self.w_icon = get_image(make_url(data_dragon['champion_spell_icon'], self.w['image']['full']))
-        self.e_icon = get_image(make_url(data_dragon['champion_spell_icon'], self.e['image']['full']))
-        self.r_icon = get_image(make_url(data_dragon['champion_spell_icon'], self.r['image']['full']))
+    def get_abilities(self):
+        return {
+        'q': {
+            'id': self.champion_data['spells'][0]['id'],
+            'name': self.champion_data['spells'][0]['name'],
+            'description': self.champion_data['spells'][0]['description'],
+            'maxrank': self.champion_data['spells'][0]['maxrank'],
+            'cooldown': self.champion_data['spells'][0]['cooldown'],
+            'cost': self.champion_data['spells'][0]['cost'],
+            'maxammo': self.champion_data['spells'][0]['maxammo'],
+            'range': self.champion_data['spells'][0]['range'],
+            'image_id': self.champion_data['spells'][0]['image']['full']
+            },
+        'w': {
+            'id': self.champion_data['spells'][1]['id'],
+            'name': self.champion_data['spells'][1]['name'],
+            'description': self.champion_data['spells'][1]['description'],
+            'maxrank': self.champion_data['spells'][1]['maxrank'],
+            'cooldown': self.champion_data['spells'][1]['cooldown'],
+            'cost': self.champion_data['spells'][1]['cost'],
+            'maxammo': self.champion_data['spells'][1]['maxammo'],
+            'range': self.champion_data['spells'][1]['range'],
+            'image_id': self.champion_data['spells'][1]['image']['full']
+            },
+        'e': {
+            'id': self.champion_data['spells'][2]['id'],
+            'name': self.champion_data['spells'][2]['name'],
+            'description': self.champion_data['spells'][2]['description'],
+            'maxrank': self.champion_data['spells'][2]['maxrank'],
+            'cooldown': self.champion_data['spells'][2]['cooldown'],
+            'cost': self.champion_data['spells'][2]['cost'],
+            'maxammo': self.champion_data['spells'][2]['maxammo'],
+            'range': self.champion_data['spells'][2]['range'],
+            'image_id': self.champion_data['spells'][2]['image']['full']
+            },
+        'r': {
+            'id': self.champion_data['spells'][3]['id'],
+            'name': self.champion_data['spells'][3]['name'],
+            'description': self.champion_data['spells'][3]['description'],
+            'maxrank': self.champion_data['spells'][3]['maxrank'],
+            'cooldown': self.champion_data['spells'][3]['cooldown'],
+            'cost': self.champion_data['spells'][3]['cost'],
+            'maxammo': self.champion_data['spells'][3]['maxammo'],
+            'range': self.champion_data['spells'][3]['range'],
+            'image_id': self.champion_data['spells'][3]['image']['full']
+            }
+        }
 
-    def get_artwork(self, *args):
+    def get_skins(self):
+        skins = {}
+        for skin in self.champion_data['skins']:
+            skins[skin['id']] = {
+                'name': skin['name'],
+                'num': skin['num'],
+                'chromas': skin['chromas'],
+                'image_id': make_url(self.name, '_', str(skin['num']), '.jpg')
+                }
+        return skins
+
+    def get_lore(self):
+        return self.champion_data['lore']
+
+    def get_tags(self):
+        return self.champion_data['tags']
+
+    def get_partype(self):
+        return self.champion_data['partype']
+
+    def get_info(self):
+        return self.champion_data['info']
+
+    def get_stats(self):
+        return self.champion_data['stats']
+
+    def get_passive_icon(self):
+        return get_image(make_url(data_dragon['champion_passive_icon'], self.get_passive()['image']))
+
+    def get_ability_icon(self, ability):
+        return get_image(make_url(data_dragon['champion_spell_icon'], self.get_abilities()[ability]['image_id']))
+
+    def get_icon(self):
+        return get_image(make_url(data_dragon['champion_icon'], self.champion_data['image']['full']))
+
+    def get_splash(self, *args):
         if len(args) == 0:
-            skin_index = 0
+            image_id = self.get_skins()[str(self.id) + '000']['image_id']
         else:
-            skin_index = self.skins[args[0]]['num']
-        self.splash = get_image(make_url(data_dragon['champion_splash'], self.name, '_', str(skin_index), '.jpg'))
-        self.banner = get_image(make_url(data_dragon['champion_banner'], self.name, '_', str(skin_index), '.jpg'))
+            image_id = self.get_skins()[str(args[0])]['image_id']
+        return get_image(make_url(data_dragon['champion_splash'], image_id))
+
+    def get_banner(self, *args):
+        if len(args) == 0:
+            image_id = self.get_skins()[str(self.id) + '000']['image_id']
+        else:
+            image_id = self.get_skins()[str(args[0])]['image_id']
+        return get_image(make_url(data_dragon['champion_banner'], image_id))
+
+class Item():
+    def __init__(self, identifier):
+        url = make_url(data_dragon['items_json'])
+        self.all_items_data = extract_json(url)['data']
+
+        if isinstance(identifier, int):
+            self.id = identifier
+            for item_key in self.all_items_data.keys():
+                if int(item_key) == identifier:
+                    self.name = self.all_items_data[item_key]['name']
+                    break
+        else:
+            self.name = identifier
+            for item_key in self.all_items_data.keys():
+                if self.all_items_data[item_key]['name'] == identifier:
+                    self.id = int(item_key)
+                    break
+
+        self.item_data = self.all_items_data[str(self.id)]
+
+    def get_name(self):
+        return self.name
+
+    def get_id(self):
+        return self.id
+
+    def get_description(self):
+        return self.item_data['plaintext']
+
+    def get_tags(self):
+        return self.item_data['tags']
+
+    def get_stats(self):
+        return self.item_data['stats']
+
+    def get_prices(self):
+        return {
+        'buy': self.item_data['gold']['total'],
+        'sell': self.item_data['gold']['sell']
+        }
+
+    def get_image_id(self):
+        return self.item_data['image']['full']
+
+    def get_image(self):
+        return get_image(make_url(data_dragon['item_icon'], self.get_image_id()))
+
+class SummonerSpell():
+    def __init__(self, identifier):
+        url = make_url(data_dragon['summoner_spell_json'])
+        self.all_summoner_spell_data = extract_json(url)['data']
+
+        if isinstance(identifier, int):
+            self.id = identifier
+            for summoner_spell_key in self.all_summoner_spell_data.keys():
+                if int(self.all_summoner_spell_data[summoner_spell_key]['key']) == identifier:
+                    self.name = self.all_summoner_spell_data[summoner_spell_key]['name']
+                    self.summoner_key = summoner_spell_key
+                    break
+        else:
+            self.name = identifier
+            for summoner_spell_key in self.all_summoner_spell_data.keys():
+                if self.all_summoner_spell_data[summoner_spell_key]['name'] == identifier:
+                    self.id = int(summoner_spell_key)
+                    self.summoner_key = summoner_spell_key
+                    break
+
+        self.summoner_spell_data = self.all_summoner_spell_data[self.summoner_key]
+
+    def get_description(self):
+        return self.summoner_spell_data['description']
+
+    def get_cooldown(self):
+        return self.summoner_spell_data['cooldown']
+
+    def get_efect(self):
+        return self.summoner_spell_data['effect']
+
+    def get_range(self):
+        return self.summoner_spell_data['range']
+
+    def get_image_id(self):
+        return self.summoner_spell_data['image']['full']
+
+    def get_image(self):
+        return get_image(make_url(data_dragon['summoner_spell_icon'], self.get_image_id()))
 
 ###
 
-player = Summoner(summoner_name)
-player.champion_mastery(1)
-player.get_match(6)
-player.profile_icon_id
+my_game = Game(2048253838)
+my_game.get_player_info('ietx')
 
-champ = Champion(69)
-print_img(champ.icon)
-champ.get_ability_icons()
-champ.skin_names
-champ.get_artwork(champ.skin_names[3])
-print_img(champ.splash)
+Qiqi = Champion('Qiyana')
+Qiqi.id
+Qiqi.get_banner()
 
-game = gameSummoner(player.match_id)
-game.get_summoner_info(summoner_name)
-game.summoner_info
+items_data = extract_json(data_dragon['items_json'])
+items_data['data']
 
+item = Item('Boots of Speed')
+item.get_image()
 
-game_blue = gameTeam('blue', player.match_id)
-game_blue.get_players_info()
-game_blue.players_list[0]
-
-leblanc = Champion('Cassiopeia')
-leblanc.skins
+barrier = SummonerSpell(21)
+barrier.get_image()
